@@ -1,0 +1,52 @@
+name: "Build Extension Zip (local dev)"
+
+# Unlike publish-chrome-extension.yml, this needs no Chrome Web Store
+# secrets: it just builds dist/ and uploads it as a downloadable artifact,
+# so a build can be grabbed (e.g. from a Windows machine, via the browser)
+# without shipping the built dist/ folder over any other channel.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - local-dev-no-auth
+      - main
+
+env:
+  EXTENSION_DIR: apps/chrome-extension
+
+jobs:
+  build:
+    name: Build extension zip
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-js
+
+      - name: Typecheck
+        run: pnpm --filter "@cap/chrome-extension..." typecheck
+
+      - name: Build
+        run: pnpm --filter @cap/chrome-extension build
+
+      - name: Package
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -e "const fs = require('node:fs'); const manifest = JSON.parse(fs.readFileSync('${EXTENSION_DIR}/public/manifest.json', 'utf8')); console.log(manifest.version);")"
+          zip_path="${RUNNER_TEMP}/cap-chrome-extension-${version}-${GITHUB_REF_NAME}.zip"
+          (cd "${EXTENSION_DIR}/dist" && zip -r "${zip_path}" . -x "*.DS_Store")
+          echo "zip_path=${zip_path}" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=cap-chrome-extension-${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: ${{ steps.package.outputs.zip_path }}
+          if-no-files-found: error
