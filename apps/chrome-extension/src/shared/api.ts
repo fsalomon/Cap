@@ -5,6 +5,7 @@ import type {
 	ExtensionAuth,
 	ExtensionSettings,
 	InstantRecordingCreation,
+	StepEvent,
 } from "./types";
 
 // The JSON request body matches the encoded side of the server schema, so
@@ -221,3 +222,36 @@ export const deleteInstantRecording = (
 		path: extensionApiPath(ExtensionApiPaths.deleteInstantRecording(videoId)),
 		method: "DELETE",
 	});
+
+// Not part of Extension.ExtensionApiPaths: this is a local-pipeline-only
+// sidecar endpoint (screenflow's `serve-extension` mock), not a route the
+// real cap.so server implements or needs to. Deliberately unauthenticated
+// (no auth header, no ApiRequestError) and best-effort: step logging must
+// never interrupt or fail a real recording, so every error is swallowed
+// here rather than surfaced to the caller.
+const STEP_EVENT_TIMEOUT_MS = 5_000;
+
+export const postStepEvent = async (
+	settings: ExtensionSettings,
+	videoId: string,
+	step: StepEvent,
+): Promise<void> => {
+	try {
+		await fetch(
+			apiUrl(
+				settings,
+				`/api/extension/instant-recordings/${encodeURIComponent(videoId)}/steps`,
+			),
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(step),
+				signal: AbortSignal.timeout(STEP_EVENT_TIMEOUT_MS),
+			},
+		);
+	} catch {
+		// Best-effort: a slow/unreachable/mismatched endpoint (e.g. apiBaseUrl
+		// still pointed at cap.so, which has no such route) must not affect the
+		// active recording.
+	}
+};

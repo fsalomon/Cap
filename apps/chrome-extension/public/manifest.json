@@ -40,6 +40,11 @@
 			"matches": ["http://*/*", "https://*/*", "file:///*"],
 			"js": ["assets/content-bootstrap.js"],
 			"run_at": "document_idle"
+		},
+		{
+			"matches": ["http://*/*", "https://*/*", "file:///*"],
+			"js": ["assets/content-step-logger.js"],
+			"run_at": "document_idle"
 		}
 	],
 	"web_accessible_resources": [

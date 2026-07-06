@@ -3,6 +3,7 @@ import {
 	createAuthStart,
 	fetchBootstrap,
 	parseAuthResponse,
+	postStepEvent,
 	revokeAuth,
 } from "../shared/api";
 import {
@@ -1531,6 +1532,15 @@ const handleRequest = async (
 	message: ServiceWorkerRequest,
 	sender: chrome.runtime.MessageSender,
 ): Promise<ServiceWorkerResponse> => {
+	if (message.type === "step-event") {
+		// Fire-and-forget: the content script does not await this response for
+		// anything beyond acknowledging delivery, and a slow/unreachable sidecar
+		// endpoint must never stall or fail the actual recording.
+		const settings = await loadSettings();
+		void postStepEvent(settings, message.videoId, message.step);
+		return { ok: true };
+	}
+
 	if (message.type === "auth-start") {
 		const settings = await loadSettings();
 		await beginAuthFlow(settings);

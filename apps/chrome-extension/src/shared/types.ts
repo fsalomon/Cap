@@ -187,6 +187,32 @@ export type RecordingStatus =
 			recoverable?: boolean;
 	  };
 
+// A single captured page interaction, timestamped against the same
+// startedAt the active recording's own RecordingStatus carries — tVideo is
+// computed once, at capture time, directly from that authoritative value
+// instead of being reconstructed after the fact from an unrelated source
+// (HAR/DevTools-Recorder timing has no relationship to this recording's own
+// clock; this does, because it reads the same startedAt the video itself is
+// keyed on).
+export type StepEventKind = "click" | "doubleClick" | "change" | "keyDown";
+
+export type StepEvent = {
+	index: number;
+	kind: StepEventKind;
+	selector: string | null;
+	label: string;
+	url: string;
+	tVideo: number;
+	tWall: string;
+};
+
+export type StepEventRequest = {
+	target: "service-worker";
+	type: "step-event";
+	videoId: VideoId;
+	step: StepEvent;
+};
+
 export type StartRecordingRequest = {
 	target: "offscreen";
 	type: "start-recording";
@@ -316,6 +342,7 @@ export type OffscreenResponse =
 	  };
 
 export type ServiceWorkerRequest =
+	| StepEventRequest
 	| {
 			target: "service-worker";
 			type: "auth-start";
