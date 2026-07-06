@@ -31,7 +31,17 @@ export const PRODUCTION_API_BASE_URL = "https://cap.so";
 const DEFAULT_API_BASE_URL =
 	import.meta.env.MODE === "development"
 		? "http://localhost:3000"
-		: PRODUCTION_API_BASE_URL;
+		: // This branch only ever talks to screenflow's local mock backend
+			// (serve-extension's own default port), never real cap.so -- unlike
+			// upstream, a production build here must not default to
+			// PRODUCTION_API_BASE_URL, or the sign-in-bypass guard in
+			// service-worker.ts's loadSignedInState() (deliberately still gated
+			// on apiBaseUrl !== PRODUCTION_API_BASE_URL, not removed) would never
+			// fire on a fresh install: it'd show the real sign-in view before
+			// there was ever a chance to change the Cap URL to something
+			// non-production. Still just a default -- Options can point this at
+			// any host (e.g. a LAN address for cross-machine testing).
+			"http://localhost:8945";
 
 export type MediaAccessState = {
 	camera: boolean;
