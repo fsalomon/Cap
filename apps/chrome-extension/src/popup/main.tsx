@@ -597,12 +597,14 @@ function App() {
 					signedOut ? "bg-[--paper]" : "bg-gray-2",
 				)}
 			>
-				{auth && (
-					<div className="absolute right-3 top-3 z-10 flex gap-2">
-						<DashboardButton onClick={openDashboard} />
-						<SettingsButton onClick={() => void openOptions()} />
-					</div>
-				)}
+				<div className="absolute right-3 top-3 z-10 flex gap-2">
+					{auth && <DashboardButton onClick={openDashboard} />}
+					{/* Unlike DashboardButton (meaningless without a real cap.so
+					account), Settings must stay reachable even when signed out --
+					otherwise a fresh install pointed at the real production API has
+					no in-popup path to Options to change apiBaseUrl at all. */}
+					<SettingsButton onClick={() => void openOptions()} />
+				</div>
 				<RecorderHeader
 					isBusy={busy || recordingActive}
 					isPro={isPro}

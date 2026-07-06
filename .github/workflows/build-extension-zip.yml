@@ -38,15 +38,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          version="$(node -e "const fs = require('node:fs'); const manifest = JSON.parse(fs.readFileSync('${EXTENSION_DIR}/public/manifest.json', 'utf8')); console.log(manifest.version);")"
-          zip_path="${RUNNER_TEMP}/cap-chrome-extension-${version}-${GITHUB_REF_NAME}.zip"
-          (cd "${EXTENSION_DIR}/dist" && zip -r "${zip_path}" . -x "*.DS_Store")
-          echo "zip_path=${zip_path}" >> "$GITHUB_OUTPUT"
           echo "artifact_name=cap-chrome-extension-${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Upload extension artifact
         uses: actions/upload-artifact@v4
         with:
+          # upload-artifact already zips whatever `path` points at -- passing
+          # a directory here means one download-and-unzip on the far end;
+          # passing a pre-zipped file (the previous version of this step)
+          # produced a zip-of-a-zip instead.
           name: ${{ steps.package.outputs.artifact_name }}
-          path: ${{ steps.package.outputs.zip_path }}
+          path: ${{ env.EXTENSION_DIR }}/dist
           if-no-files-found: error
