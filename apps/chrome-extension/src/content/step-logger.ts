@@ -119,11 +119,15 @@ const main = () => {
 	const send = (kind: StepEventKind, el: Element) => {
 		if (!active) return;
 		const selector = pickSelector(el);
+		const ariaLabel = el.getAttribute("aria-label");
+		const title = el.getAttribute("title");
 		const step: StepEvent = {
 			index: stepIndex,
 			kind,
 			selector,
 			label: labelFor(el, kind, selector),
+			ariaLabel: ariaLabel?.trim() ? truncate(ariaLabel.trim(), 80) : null,
+			title: title?.trim() ? truncate(title.trim(), 80) : null,
 			url: window.location.href,
 			tVideo: (Date.now() - active.startedAt) / 1000,
 			tWall: new Date().toISOString(),

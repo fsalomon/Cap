@@ -201,6 +201,13 @@ export type StepEvent = {
 	kind: StepEventKind;
 	selector: string | null;
 	label: string;
+	// Captured directly from the element's own attributes, independent of
+	// whatever heuristic pickSelector/textLabel used to build selector/label
+	// above — kept as raw first-class fields so downstream consumers (e.g.
+	// guide.md generation) aren't stuck re-deriving them from a collapsed
+	// label string.
+	ariaLabel: string | null;
+	title: string | null;
 	url: string;
 	tVideo: number;
 	tWall: string;
