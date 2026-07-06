@@ -26,6 +26,7 @@ import {
 	loadSharedUiState,
 	loadUploadProgressTabId,
 	loadWebcamPreviewDismissed,
+	PRODUCTION_API_BASE_URL,
 	registerOverlayToken,
 	saveAuth,
 	saveAuthError,
@@ -1088,7 +1089,7 @@ const refreshBootstrapInBackground = (
 };
 
 const loadSignedInState = async () => {
-	const [settings, auth, pendingAuth, authError] = await Promise.all([
+	const [settings, storedAuth, pendingAuth, authError] = await Promise.all([
 		loadSettings(),
 		loadAuth(),
 		loadPendingAuth(),
@@ -1099,6 +1100,17 @@ const loadSignedInState = async () => {
 	if (pendingAuth && !authPending) {
 		await clearPendingAuth();
 	}
+
+	// Real Cap servers require the interactive OAuth-style sign-in flow, but a
+	// local dev/mock backend (anything that isn't the real production API) has
+	// no reason to gate recording behind it — this fork auto-authenticates
+	// against those instead of showing the sign-in view at all.
+	let auth = storedAuth;
+	if (!auth && settings.apiBaseUrl !== PRODUCTION_API_BASE_URL) {
+		auth = { authApiKey: "local-dev-token", userId: "local-user" };
+		await saveAuth(auth);
+	}
+
 	if (!auth) {
 		return { settings, auth: null, bootstrap: null, authPending, authError };
 	}
